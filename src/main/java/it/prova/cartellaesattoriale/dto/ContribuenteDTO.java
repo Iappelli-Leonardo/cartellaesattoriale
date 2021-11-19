@@ -19,7 +19,7 @@ public class ContribuenteDTO {
 	
 	private Long id;
 
-	//@NotBlank(message = "{nome.notblank}")
+	@NotBlank(message = "{nome.notblank}")
 	private String nome;
 
 	@NotBlank(message = "{cognome.notblank}")
