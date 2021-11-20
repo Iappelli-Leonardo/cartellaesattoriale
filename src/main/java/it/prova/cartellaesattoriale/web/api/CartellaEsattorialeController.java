@@ -41,7 +41,7 @@ public class CartellaEsattorialeController {
 	public CartellaEsattorialeDTO createNew(@Valid @RequestBody CartellaEsattorialeDTO cartellaInput) {
 
 		if (cartellaInput.getId() != null)
-			throw new IdNotNullForInsertException("Non è ammesso fornire un id per la creazione");
+			throw new IdNotNullForInsertException("Un id non è valido per la creazione!");
 
 		CartellaEsattoriale cartellaInserito = cartellaEsattorialeService
 				.inserisciNuovo(cartellaInput.buildCartellaEsattorialeModel());
