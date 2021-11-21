@@ -1,5 +1,6 @@
 package it.prova.cartellaesattoriale.web.api;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.validation.Valid;
@@ -17,7 +18,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.HttpStatus;
 
 import it.prova.cartellaesattoriale.dto.ContribuenteDTO;
+import it.prova.cartellaesattoriale.model.CartellaEsattoriale;
 import it.prova.cartellaesattoriale.model.Contribuente;
+import it.prova.cartellaesattoriale.model.Stato;
 import it.prova.cartellaesattoriale.service.ContribuenteService;
 import it.prova.cartellaesattoriale.web.api.exeption.AssociazionCartelleException;
 import it.prova.cartellaesattoriale.web.api.exeption.ContribuenteNotFoundException;
@@ -87,6 +90,27 @@ public class ContribuenteController {
 	public List<ContribuenteDTO> search(@RequestBody ContribuenteDTO example) {
 		return ContribuenteDTO.createContribuenteDTOListFromModelList(contribuenteService.findByExample(example.buildContribuenteModel()),
 				false);
+	}
+	@GetMapping("/verificaContenziosi")
+	public List<ContribuenteDTO> verificaContenziosi(){
+		
+		List<Contribuente> listaContribuenti = contribuenteService.listAllElementsEager();
+		
+		List<ContribuenteDTO> results = new ArrayList<ContribuenteDTO>();
+		
+		for (Contribuente contribuenteItem : listaContribuenti) {
+			ContribuenteDTO temp = ContribuenteDTO.buildContribuenteDTOFromModel(contribuenteItem, false);
+			
+			for (CartellaEsattoriale cartella : contribuenteItem.getCartelleEsattoriali()) {
+				if(cartella.getStato().equals(Stato.IN_CONTENZIOSO)) {
+					temp.setContezioso(true);
+				}
+			}
+			if(temp.isContezioso() != true)
+				temp.setContezioso(false);
+			results.add(temp);
+		}
+		return results;
 	}
 
 }

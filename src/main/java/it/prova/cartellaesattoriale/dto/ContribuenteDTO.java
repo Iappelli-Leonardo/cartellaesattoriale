@@ -33,6 +33,8 @@ public class ContribuenteDTO {
 	
 	@NotBlank(message = "{indirizzo.notblank}")
 	private String indirizzo;
+	
+	private boolean contezioso;
 
 	@JsonIgnoreProperties(value = { "contribuente" })
 	private Set<CartellaEsattorialeDTO> cartelleEsattoriali = new HashSet<CartellaEsattorialeDTO>(0);
@@ -139,6 +141,14 @@ public class ContribuenteDTO {
 
 	public void setCartelleEsattoriali(Set<CartellaEsattorialeDTO> cartelleEsattoriali) {
 		this.cartelleEsattoriali = cartelleEsattoriali;
+	}
+	
+	public boolean isContezioso() {
+		return contezioso;
+	}
+
+	public void setContezioso(boolean contezioso) {
+		this.contezioso = contezioso;
 	}
 
 	public Contribuente buildContribuenteModel() {
