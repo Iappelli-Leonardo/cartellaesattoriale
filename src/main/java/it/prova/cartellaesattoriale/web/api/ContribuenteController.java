@@ -17,7 +17,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.HttpStatus;
 
+import it.prova.cartellaesattoriale.dto.CartellaEsattorialeDTO;
 import it.prova.cartellaesattoriale.dto.ContribuenteDTO;
+import it.prova.cartellaesattoriale.dto.ReportContribuenteDTO;
 import it.prova.cartellaesattoriale.model.CartellaEsattoriale;
 import it.prova.cartellaesattoriale.model.Contribuente;
 import it.prova.cartellaesattoriale.model.Stato;
@@ -29,10 +31,10 @@ import it.prova.cartellaesattoriale.web.api.exeption.IdNotNullForInsertException
 @RestController
 @RequestMapping("api/contribuente")
 public class ContribuenteController {
-	
+
 	@Autowired
 	ContribuenteService contribuenteService;
-	
+
 	@GetMapping
 	public List<ContribuenteDTO> getAll() {
 		return ContribuenteDTO.createContribuenteDTOListFromModelList(contribuenteService.listAllElementsEager(), true);
@@ -51,17 +53,18 @@ public class ContribuenteController {
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	public ContribuenteDTO createNew(@Valid @RequestBody ContribuenteDTO contribuenteInput) {
-		
-		if(contribuenteInput.getId() != null)
+
+		if (contribuenteInput.getId() != null)
 			throw new IdNotNullForInsertException("Un id non è valido per la creazione!");
 
- 		
-		Contribuente contribuenteInserito = contribuenteService.inserisciNuovo(contribuenteInput.buildContribuenteModel());
+		Contribuente contribuenteInserito = contribuenteService
+				.inserisciNuovo(contribuenteInput.buildContribuenteModel());
 		return ContribuenteDTO.buildContribuenteDTOFromModel(contribuenteInserito, false);
 	}
 
 	@PutMapping("/{id}")
-	public ContribuenteDTO update(@Valid @RequestBody ContribuenteDTO contribuenteInput, @PathVariable(required = true) Long id) {
+	public ContribuenteDTO update(@Valid @RequestBody ContribuenteDTO contribuenteInput,
+			@PathVariable(required = true) Long id) {
 		Contribuente contribuente = contribuenteService.caricaSingoloElemento(id);
 
 		if (contribuente == null)
@@ -81,36 +84,62 @@ public class ContribuenteController {
 			throw new ContribuenteNotFoundException("Contribuente not found con id: " + id);
 
 		if (contribuente.getCartelleEsattoriali() != null)
-			throw new AssociazionCartelleException("Ci sono ancora delle cartelleEsattoriali associate al contribuente!");
-		
+			throw new AssociazionCartelleException(
+					"Ci sono ancora delle cartelleEsattoriali associate al contribuente!");
+
 		contribuenteService.rimuovi(contribuente);
 	}
 
 	@PostMapping("/search")
 	public List<ContribuenteDTO> search(@RequestBody ContribuenteDTO example) {
-		return ContribuenteDTO.createContribuenteDTOListFromModelList(contribuenteService.findByExample(example.buildContribuenteModel()),
-				false);
+		return ContribuenteDTO.createContribuenteDTOListFromModelList(
+				contribuenteService.findByExample(example.buildContribuenteModel()), false);
 	}
+
 	@GetMapping("/verificaContenziosi")
-	public List<ContribuenteDTO> verificaContenziosi(){
-		
+	public List<ContribuenteDTO> verificaContenziosi() {
+
 		List<Contribuente> listaContribuenti = contribuenteService.listAllElementsEager();
-		
+
 		List<ContribuenteDTO> results = new ArrayList<ContribuenteDTO>();
-		
+
 		for (Contribuente contribuenteItem : listaContribuenti) {
 			ContribuenteDTO temp = ContribuenteDTO.buildContribuenteDTOFromModel(contribuenteItem, false);
-			
+
 			for (CartellaEsattoriale cartella : contribuenteItem.getCartelleEsattoriali()) {
-				if(cartella.getStato().equals(Stato.IN_CONTENZIOSO)) {
+				if (cartella.getStato().equals(Stato.IN_CONTENZIOSO)) {
 					temp.setContezioso(true);
 				}
 			}
-			if(temp.isContezioso() != true)
+			if (temp.isContezioso() != true)
 				temp.setContezioso(false);
 			results.add(temp);
 		}
 		return results;
 	}
 
+	@GetMapping("/report")
+	public List<ReportContribuenteDTO> reportContribuenti() {
+		List<ReportContribuenteDTO> listaContribuenti= ReportContribuenteDTO
+				.createContribuenteDTOListFromModelList(contribuenteService.listAllElementsEager(), true);
+		int pagamentoConcluso = 0;
+		int inContenzioso = 0;
+		int importoCartelle = 0;
+
+		for (ReportContribuenteDTO reportItem : listaContribuenti) {
+			for (CartellaEsattorialeDTO cartellaItem : reportItem.getCartelle()) {
+				if (cartellaItem.getStato().equals(Stato.IN_CONTENZIOSO)
+						|| cartellaItem.getStato().equals(Stato.CONCLUSA)) {
+					inContenzioso += cartellaItem.getImporto();
+					pagamentoConcluso += cartellaItem.getImporto();
+					importoCartelle += cartellaItem.getImporto();
+				}
+				reportItem.setInContenzioso(inContenzioso);
+				reportItem.setConclusoPagato(pagamentoConcluso);
+				reportItem.setTotale(importoCartelle);
+			}
+			
+		}
+		return listaContribuenti;
+	}
 }
